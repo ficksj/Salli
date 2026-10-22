@@ -163,6 +163,7 @@ public partial class MainWindow : Window
                 src.AddHook(WindowProc);
                 AddClipboardFormatListener(_hwnd);
                 RegisterHotkeys();
+                InstallClickOutside();
             }
         };
         Loaded += async (_, _) =>
@@ -199,6 +200,7 @@ public partial class MainWindow : Window
         Closed      += (_, _) =>
         {
             UnregisterHotkeys();
+            UninstallClickOutside();
             if (_hwnd != IntPtr.Zero) RemoveClipboardFormatListener(_hwnd);
             _tray.Visible = false;
             _tray.Dispose();
@@ -350,6 +352,99 @@ public partial class MainWindow : Window
         Left   = area.Left + Math.Round((area.Width - Width) / 2);
         Top    = area.Top;
     }
+
+    // ── click anywhere outside → collapse ─────────────────────────────────
+    private const int WH_MOUSE_LL    = 14;
+    private const int WM_LBUTTONDOWN = 0x0201;
+    private const int WM_RBUTTONDOWN = 0x0204;
+    private const int WM_MBUTTONDOWN = 0x0207;
+
+    private delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINTS
+    {
+        public int X;
+        public int Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MSLLHOOKSTRUCT
+    {
+        public POINTS Pt;
+        public uint   MouseData;
+        public uint   Flags;
+        public uint   Time;
+        public IntPtr ExtraInfo;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, uint threadId);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool UnhookWindowsHookEx(IntPtr hook);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+    private static extern IntPtr GetModuleHandle(string? name);
+
+    private IntPtr _mouseHook;
+    private LowLevelMouseProc? _mouseProc;
+
+    private void InstallClickOutside()
+    {
+        if (_mouseHook != IntPtr.Zero) return;
+
+        _mouseProc = MouseHookProc;
+        _mouseHook  = SetWindowsHookEx(WH_MOUSE_LL, _mouseProc, GetModuleHandle(null), 0);
+    }
+
+    private void UninstallClickOutside()
+    {
+        if (_mouseHook == IntPtr.Zero) return;
+
+        UnhookWindowsHookEx(_mouseHook);
+        _mouseHook = IntPtr.Zero;
+        _mouseProc = null;
+    }
+
+    private IntPtr MouseHookProc(int code, IntPtr wParam, IntPtr lParam)
+    {
+        try
+        {
+            if (code >= 0 && _mode == Mode.Expanded && !_pinned
+                && _settingsWindow is not { IsVisible: true })
+            {
+                var msg = wParam.ToInt32();
+
+                if (msg is WM_LBUTTONDOWN or WM_RBUTTONDOWN or WM_MBUTTONDOWN)
+                {
+                    var info = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+                    var down = new Point(info.Pt.X, info.Pt.Y);
+
+                    if (!IslandRect().Contains(PointFromScreen(down)))
+                    {
+                        // let the click reach its target first, then fold the island away
+                        Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+                        {
+                            if (_mode == Mode.Expanded && !_pinned
+                                && _settingsWindow is not { IsVisible: true })
+                                SetMode(Mode.Collapsed);
+                        }));
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // a hook must never throw: mouse input would stall
+        }
+
+        return CallNextHookEx(_mouseHook, code, wParam, lParam);
+    }
+
 
     // ── clock + live progress ─────────────────────────────────────────────
     private void TickClock()

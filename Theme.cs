@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
@@ -51,7 +51,7 @@ public static class Theme
             _          => Color.FromRgb(0x14, 0x14, 0x18)
         };
 
-        var surfaceAlpha = s.Glass ? (byte)0xCC : (byte)0xFF;
+        var surfaceAlpha = s.Glass ? (byte)0xE2 : (byte)0xFF;
 
         if (IsLight)
         {
