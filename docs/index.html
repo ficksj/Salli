@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salli — динамический остров для Windows</title>
+<meta name="description" content="Salli — динамический остров для Windows: музыка, система, сеть, буфер обмена, поиск и таймер в одной плашке у верхней кромки экрана.">
+<meta name="theme-color" content="#0A0A0E">
+<style>
+  :root {
+    --bg:        #08080b;
+    --surface:   #141418;
+    --card:      rgba(255, 255, 255, .045);
+    --card-hi:   rgba(255, 255, 255, .075);
+    --line:      rgba(255, 255, 255, .08);
+    --text:      #f2f2f7;
+    --sub:       #9b9ba6;
+    --muted:     #6c6c78;
+    --accent:    #0a84ff;
+    --accent-2:  #4fb3ff;
+    --radius:    22px;
+    --ease:      cubic-bezier(.22, 1, .36, 1);
+    --font:      "Segoe UI Variable Display", "Segoe UI", Inter, system-ui, -apple-system,
+                 "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── ambient background ─────────────────────────────────────────────── */
+  .glow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(900px 520px at 50% -10%, rgba(10, 132, 255, .20), transparent 70%),
+      radial-gradient(700px 700px at 90% 10%, rgba(120, 90, 255, .10), transparent 70%),
+      radial-gradient(800px 500px at 5% 60%, rgba(10, 132, 255, .06), transparent 70%);
+  }
+
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: .5;
+    background-image:
+      linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 25%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 25%, transparent 75%);
+  }
+
+  main, header, footer { position: relative; z-index: 1; }
+
+  .wrap {
+    width: min(1120px, calc(100% - 48px));
+    margin-inline: auto;
+  }
+
+  /* ── nav ─────────────────────────────────────────────────────────────── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    background: rgba(8, 8, 11, .55);
+    border-bottom: 1px solid rgba(255,255,255,.05);
+  }
+
+  nav .wrap {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    height: 62px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+  }
+
+  .logo-mark {
+    width: 26px; height: 26px;
+    border-radius: 9px;
+    background: linear-gradient(150deg, #1d1d24, #0c0c10);
+    border: 1px solid rgba(255,255,255,.10);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  .logo-mark span {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(10,132,255,.9);
+  }
+
+  nav a {
+    color: var(--sub);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color .2s;
+  }
+
+  nav a:hover { color: var(--text); }
+
+  nav .links { display: flex; gap: 24px; margin-left: auto; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 13px;
+    border: 1px solid transparent;
+    font-size: 14.5px;
+    font-weight: 550;
+    text-decoration: none;
+    color: var(--text);
+    cursor: pointer;
+    transition: transform .25s var(--ease), background .25s, border-color .25s, box-shadow .25s;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: linear-gradient(180deg, #2a9bff, var(--accent));
+    box-shadow: 0 8px 26px -8px rgba(10,132,255,.75), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 34px -8px rgba(10,132,255,.9), inset 0 1px 0 rgba(255,255,255,.3); }
+
+  .btn-ghost {
+    background: rgba(255,255,255,.05);
+    border-color: rgba(255,255,255,.09);
+  }
+
+  .btn-ghost:hover { background: rgba(255,255,255,.09); transform: translateY(-1px); }
+
+  .btn-sm { height: 34px; padding: 0 14px; font-size: 13px; border-radius: 11px; }
+
+  /* ── hero ────────────────────────────────────────────────────────────── */
+  header.hero {
+    padding: 72px 0 40px;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.09);
+    background: rgba(255,255,255,.04);
+    color: var(--sub);
+    font-size: 12.5px;
+    letter-spacing: .01em;
+  }
+
+  .badge i {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #3ddc84;
+    box-shadow: 0 0 8px #3ddc84;
+  }
+
+  h1 {
+    margin: 26px auto 0;
+    max-width: 17ch;
+    font-size: clamp(40px, 6.2vw, 74px);
+    line-height: 1.02;
+    letter-spacing: -.035em;
+    font-weight: 640;
+    background: linear-gradient(180deg, #ffffff 30%, #b7b7c4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .lead {
+    margin: 22px auto 0;
+    max-width: 60ch;
+    color: var(--sub);
+    font-size: clamp(15px, 1.6vw, 18px);
+    line-height: 1.6;
+  }
+
+  .hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+  }
+
+  .hint {
+    margin-top: 14px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  /* ── island demo ─────────────────────────────────────────────────────── */
+  .stage {
+    margin: 46px auto 0;
+    display: flex;
+    justify-content: center;
+    perspective: 1400px;
+  }
+
+  .island-wrap {
+    width: 582px;
+    max-width: 100%;
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: linear-gradient(180deg, #17171c, #111115);
+    border: 1px solid rgba(255,255,255,.09);
+    border-top: none;
+    box-shadow:
+      0 40px 90px -30px rgba(0,0,0,.9),
+      0 10px 40px -20px rgba(10,132,255,.55),
+      inset 0 -1px 0 rgba(255,255,255,.05);
+    overflow: hidden;
+    transition: height .44s var(--ease), box-shadow .4s;
+    height: 422px;
+  }
+
+  .island-wrap.collapsed { height: 52px; }
+
+  .island-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px 8px;
+    gap: 12px;
+  }
+
+  .clock { display: flex; align-items: center; gap: 10px; }
+
+  .clock b {
+    font-size: 27px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .clock small {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .clock em {
+    display: block;
+    font-style: normal;
+    font-size: 11px;
+    color: var(--sub);
+    margin-top: -1px;
+  }
+
+  .head-actions { display: flex; gap: 6px; }
+
+  .round {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,.06);
+    color: #cfcfd8;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background .2s, transform .2s var(--ease), color .2s;
+    font-size: 11px;
+  }
+
+  .round:hover { background: rgba(255,255,255,.12); transform: translateY(-1px); color: #fff; }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    padding: 0 14px;
+  }
+
+  .tab {
+    height: 30px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--sub);
+    font: inherit;
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: color .2s, background .25s;
+  }
+
+  .tab:hover { color: var(--text); background: rgba(255,255,255,.04); }
+
+  .tab.active {
+    background: rgba(255,255,255,.10);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  .panel {
+    position: relative;
+    padding: 12px 16px 16px;
+    height: 340px;
+  }
+
+  .view {
+    position: absolute;
+    inset: 12px 16px 16px;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity .26s var(--ease), transform .34s var(--ease);
+  }
+
+  .view.active { opacity: 1; transform: none; pointer-events: auto; }
+
+  .card {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius: 14px;
+  }
+
+  /* media view */
+  .track {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .art {
+    width: 56px; height: 56px;
+    border-radius: 11px;
+    flex: none;
+    background:
+      radial-gradient(circle at 30% 25%, #5878ff, transparent 55%),
+      radial-gradient(circle at 75% 80%, #ff5fa2, transparent 55%),
+      linear-gradient(140deg, #22222c, #101014);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.09);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(115deg, rgba(255,255,255,.06) 0 2px, transparent 2px 7px);
+    animation: shimmer 8s linear infinite;
+  }
+
+  @keyframes shimmer { to { transform: translateX(-14px); } }
+
+  .track-meta { min-width: 0; flex: 1; }
+
+  .track-title {
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .track-sub {
+    font-size: 11.5px;
+    color: var(--sub);
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .controls { display: flex; align-items: center; gap: 8px; }
+
+  .cq {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,.07);
+    color: #dcdce4;
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: background .2s, transform .2s var(--ease);
+  }
+
+  .cq:hover { background: rgba(255,255,255,.14); transform: translateY(-1px); }
+
+  .cq.play {
+    width: 34px; height: 34px;
+    background: #f4f4f7;
+    color: #111;
+  }
+
+  .bar {
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.10);
+    margin: 14px 14px 8px;
+    overflow: hidden;
+  }
+
+  .bar > i {
+    display: block;
+    height: 100%;
+    width: 42%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    box-shadow: 0 0 12px rgba(10,132,255,.7);
+    animation: play 46s linear infinite;
+  }
+
+  @keyframes play { from { width: 6%; } to { width: 100%; } }
+
+  .times {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 14px;
+    font-size: 10px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lyrics {
+    margin-top: 12px;
+    height: 150px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+    padding: 12px;
+  }
+
+  .lyrics-lines { display: grid; gap: 10px; }
+
+  .lyrics-lines span { color: var(--sub); transition: color .3s, transform .3s var(--ease); }
+
+  .lyrics-lines span.now { color: #fff; transform: scale(1.03); }
+
+  /* timer view */
+  .timer-grid {
+    display: grid;
+    grid-template-columns: 1fr 190px;
+    gap: 18px;
+    height: 100%;
+  }
+
+  .ring-wrap { display: grid; place-items: center; }
+
+  .ring { position: relative; width: 190px; height: 190px; }
+
+  .ring svg { transform: rotate(-90deg); }
+
+  .ring .track-c { stroke: rgba(255,255,255,.07); }
+
+  .ring .prog {
+    stroke: var(--accent);
+    filter: drop-shadow(0 0 8px rgba(10,132,255,.8));
+    stroke-dasharray: 534;
+    stroke-dashoffset: 0;
+    animation: deplete 30s linear infinite;
+  }
+
+  @keyframes deplete { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 534; } }
+
+  .ring-label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .ring-label b { font-size: 30px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .ring-label span { font-size: 11px; color: var(--sub); }
+
+  .timer-side { display: grid; align-content: center; gap: 8px; }
+
+  .pill {
+    height: 36px;
+    border-radius: 12px;
+    border: none;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 550;
+    cursor: pointer;
+    transition: transform .2s var(--ease), filter .2s;
+  }
+
+  .pill:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+  .pill-main { background: linear-gradient(180deg, #2a9bff, var(--accent)); color: #fff; box-shadow: 0 8px 22px -10px rgba(10,132,255,.8); }
+  .pill-ghost { background: rgba(255,255,255,.07); color: var(--text); }
+
+  .presets {
+    display: flex;
+    gap: 7px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  .preset {
+    height: 28px;
+    padding: 0 13px;
+    border-radius: 9px;
+    border: none;
+    background: rgba(255,255,255,.06);
+    color: var(--sub);
+    font: inherit;
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+
+  .preset:hover { background: rgba(255,255,255,.12); color: #fff; }
+  .preset.on { background: rgba(255,255,255,.14); color: #fff; }
+
+  /* clips view */
+  .note {
+    height: 62px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.05);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 14px 2px 8px;
+    font-size: 10px;
+    letter-spacing: .06em;
+    color: var(--sub);
+    font-weight: 600;
+  }
+
+  .clip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 44px;
+    padding: 0 10px;
+    border-radius: 11px;
+    background: rgba(255,255,255,.035);
+    margin-bottom: 6px;
+    transition: background .2s;
+  }
+
+  .clip:hover { background: rgba(255,255,255,.07); }
+
+  .clip .thumb {
+    width: 34px; height: 30px;
+    border-radius: 7px;
+    flex: none;
+    background: linear-gradient(140deg, #1e2a52, #0f1730);
+    border: 1px solid rgba(255,255,255,.08);
+    display: grid; place-items: center;
+    color: #4fb3ff;
+    font-size: 9px;
+  }
+
+  .clip .txt {
+    flex: 1;
+    min-width: 0;
+    font-size: 11.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .clip .txt small { color: var(--muted); font-size: 10.5px; }
+
+  .clip .ico { color: var(--muted); font-size: 10px; opacity: .8; }
+
+  /* nets view */
+  .nets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+  .net-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 9px;
+    font-size: 11px;
+    color: var(--sub);
+    background: rgba(255,255,255,.03);
+    margin-bottom: 6px;
+  }
+
+  .net-item b { color: var(--text); font-weight: 500; }
+
+  .mixer-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 11px;
+    background: rgba(255,255,255,.035);
+    margin-bottom: 6px;
+  }
+
+  .mixer-row .name { width: 92px; font-size: 11.5px; }
+  .mixer-row .slider { flex: 1; height: 4px; border-radius: 999px; background: rgba(255,255,255,.1); position: relative; }
+  .mixer-row .slider i { position: absolute; inset: 0 35% 0 0; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .mixer-row .val { font-size: 10.5px; color: var(--sub); width: 30px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* equalizer */
+  .eq { display: flex; align-items: flex-end; gap: 2.5px; height: 14px; }
+  .eq i {
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent);
+    animation: eq 1s ease-in-out infinite;
+  }
+  .eq i:nth-child(1) { height: 40%; animation-delay: -.1s; }
+  .eq i:nth-child(2) { height: 80%; animation-delay: -.35s; }
+  .eq i:nth-child(3) { height: 55%; animation-delay: -.6s; }
+  .eq i:nth-child(4) { height: 100%; animation-delay: -.2s; }
+
+  @keyframes eq {
+    0%, 100% { transform: scaleY(.35); }
+    50%      { transform: scaleY(1); }
+  }
+
+  .collapse-toggle {
+    margin: 18px auto 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ── sections ────────────────────────────────────────────────────────── */
+  section { padding: 92px 0; }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    font-weight: 600;
+  }
+
+  h2 {
+    margin: 12px 0 0;
+    font-size: clamp(28px, 3.6vw, 42px);
+    letter-spacing: -.03em;
+    font-weight: 620;
+    line-height: 1.1;
+  }
+
+  .section-lead {
+    margin: 16px 0 0;
+    color: var(--sub);
+    font-size: 15.5px;
+    line-height: 1.65;
+    max-width: 62ch;
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+    gap: 14px;
+    margin-top: 44px;
+  }
+
+  .feature {
+    position: relative;
+    padding: 24px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.022));
+    border: 1px solid rgba(255,255,255,.07);
+    transition: transform .45s var(--ease), border-color .3s, background .3s;
+    overflow: hidden;
+  }
+
+  .feature::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: radial-gradient(340px 180px at var(--mx, 50%) var(--my, 0%), rgba(10,132,255,.16), transparent 70%);
+    opacity: 0;
+    transition: opacity .4s;
+    pointer-events: none;
+  }
+
+  .feature:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.13); }
+  .feature:hover::after { opacity: 1; }
+
+  .feature .icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    background: rgba(10,132,255,.12);
+    border: 1px solid rgba(10,132,255,.25);
+    color: var(--accent-2);
+    margin-bottom: 16px;
+  }
+
+  .feature h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+  .feature p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--sub); }
+
+  /* screenshots */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 22px;
+    margin-top: 44px;
+  }
+
+  .shot {
+    border-radius: 20px;
+    padding: 26px 20px 18px;
+    background:
+      radial-gradient(400px 200px at 50% 0%, rgba(10,132,255,.10), transparent 70%),
+      linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.012));
+    border: 1px solid rgba(255,255,255,.07);
+    text-align: center;
+  }
+
+  .shot img {
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(0 24px 40px rgba(0,0,0,.6));
+  }
+
+  .shot figcaption { margin-top: 16px; font-size: 12.5px; color: var(--muted); }
+
+  /* how it works */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    margin-top: 40px;
+  }
+
+  .step {
+    padding: 26px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.07);
+    background: rgba(255,255,255,.025);
+  }
+
+  .step .num {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-2);
+    letter-spacing: .12em;
+    font-weight: 600;
+  }
+
+  .step h3 { margin: 12px 0 8px; font-size: 15.5px; }
+  .step p { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--sub); }
+
+  .step code {
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 12.5px;
+    color: #c9d7ff;
+    background: rgba(10,132,255,.10);
+    border: 1px solid rgba(10,132,255,.18);
+    border-radius: 6px;
+    padding: 1px 5px;
+  }
+
+  /* install */
+  .install {
+    margin-top: 34px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: #0c0c10;
+    overflow: hidden;
+  }
+
+  .install-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  pre {
+    margin: 0;
+    padding: 20px 18px;
+    overflow-x: auto;
+    font-family: "Cascadia Code", Consolas, ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #d7d7e0;
+  }
+
+  pre .c { color: #5b6478; }
+  pre .k { color: #7aa5ff; }
+  pre .s { color: #9ee6a8; }
+
+  .keys {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    margin-top: 28px;
+  }
+
+  .keys td {
+    padding: 14px 18px;
+    background: rgba(255,255,255,.03);
+    font-size: 13.5px;
+    color: var(--sub);
+  }
+
+  .keys tr td:first-child { border-radius: 12px 0 0 12px; color: var(--text); width: 46%; }
+  .keys tr td:last-child { border-radius: 0 12px 12px 0; }
+
+  kbd {
+    display: inline-block;
+    min-width: 26px;
+    padding: 4px 7px;
+    margin-right: 4px;
+    border-radius: 7px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 1px 0 rgba(0,0,0,.5);
+    font-family: inherit;
+    font-size: 11.5px;
+    color: #eaeaf2;
+    text-align: center;
+  }
+
+  /* footer */
+  footer {
+    border-top: 1px solid rgba(255,255,255,.06);
+    padding: 40px 0 56px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: center; }
+  footer a { color: var(--sub); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+
+  /* reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 760px) {
+    nav .links { display: none; }
+    header.hero { padding-top: 48px; }
+    .island-wrap { transform: scale(.92); transform-origin: top center; }
+    .timer-grid { grid-template-columns: 1fr; }
+    .ring { width: 150px; height: 150px; }
+    section { padding: 64px 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+<div class="grid-bg"></div>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><div class="logo-mark"><span></span></div> Salli</div>
+    <div class="links">
+      <a href="#features">Возможности</a>
+      <a href="#shots">Скриншоты</a>
+      <a href="#how">Плавность</a>
+      <a href="#install">Установка</a>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="https://github.com/ficksj/Salli" target="_blank" rel="noreferrer">GitHub</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="badge"><i></i> Windows 10 / 11 · .NET 8 · WPF</div>
+    <h1>Динамический остров для Windows</h1>
+    <p class="lead">
+      Музыка, система, сеть, буфер обмена, поиск и таймер — в одной плашке
+      у верхней кромки экрана. Раскрывается за 0.4 секунды и плавно
+      перетекает между состояниями.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#install">Скачать и собрать</a>
+      <a class="btn btn-ghost" href="#features">Посмотреть возможности</a>
+    </div>
+    <div class="hint">Без установки · один .exe · открытый исходный код</div>
+
+    <div class="stage">
+      <div class="island-wrap" id="island">
+        <div class="island-head">
+          <div class="clock">
+            <b id="clock">09:41</b>
+            <div>
+              <small>22 октября</small>
+              <em>четверг</em>
+            </div>
+          </div>
+          <div class="head-actions">
+            <button class="round" title="Закрепить">&#xe718;</button>
+            <button class="round" title="Настройки">&#xe713;</button>
+            <button class="round" id="collapse" title="Свернуть">&#xe70e;</button>
+            <button class="round" title="Закрыть">&#xe711;</button>
+          </div>
+        </div>
+
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-view="media">Медиа</button>
+          <button class="tab" data-view="system">Система</button>
+          <button class="tab" data-view="nets">Сети</button>
+          <button class="tab" data-view="clips">Буфер</button>
+          <button class="tab" data-view="search">Поиск</button>
+          <button class="tab" data-view="timer">Таймер</button>
+          <button class="tab" data-view="settings">Настройки</button>
+        </div>
+
+        <div class="panel">
+          <!-- МЕДИА -->
+          <div class="view active" data-view="media">
+            <div class="card track">
+              <div class="art"></div>
+              <div class="track-meta">
+                <div class="track-title">Midnight City</div>
+                <div class="track-sub">M83 · ЯНДЕКС МУЗЫКА</div>
+              </div>
+              <div class="controls">
+                <button class="cq" title="В избранное">♡</button>
+                <button class="cq" title="Предыдущий">⏮</button>
+                <button class="cq play" title="Пауза">❚❚</button>
+                <button class="cq" title="Следующий">⏭</button>
+              </div>
+            </div>
+            <div class="bar"><i></i></div>
+            <div class="times"><span>1:32</span><span>4:03</span></div>
+            <div class="lyrics">
+              <div class="lyrics-lines">
+                <span>waiting in a car</span>
+                <span class="now">watching the lights turn</span>
+                <span>city is on fire tonight</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- СИСТЕМА -->
+          <div class="view" data-view="system">
+            <div class="card" style="padding:16px">
+              <div class="mixer-row" style="background:none;padding:0 0 12px">
+                <div class="name">CPU</div>
+                <div class="slider"><i style="right:62%"></i></div>
+                <div class="val">38%</div>
+              </div>
+              <div class="mixer-row" style="background:none;padding:0 0 12px">
+                <div class="name">Память</div>
+                <div class="slider"><i style="right:44%"></i></div>
+                <div class="val">56%</div>
+              </div>
+              <div class="mixer-row" style="background:none;padding:0">
+                <div class="name">Диск C:</div>
+                <div class="slider"><i style="right:24%"></i></div>
+                <div class="val">76%</div>
+              </div>
+            </div>
+            <div class="section-head"><span>НАГРУЗКА</span><span>процессор / память</span></div>
+            <div class="clip"><div class="thumb">▤</div><div class="txt">chrome · 8 окон</div><div class="ico">12%</div></div>
+            <div class="clip"><div class="thumb">▤</div><div class="txt">Code · 3 процесса</div><div class="ico">7%</div></div>
+            <div class="clip"><div class="thumb">▤</div><div class="txt">Salli</div><div class="ico">1%</div></div>
+          </div>
+
+          <!-- СЕТИ -->
+          <div class="view" data-view="nets">
+            <div class="nets-grid">
+              <div>
+                <div class="section-head">WI-FI</div>
+                <div class="net-item"><b>Home_5G</b><span>▮▮▮</span></div>
+                <div class="net-item"><b>Cafe</b><span>▮▮</span></div>
+                <div class="net-item"><b>Guest</b><span>▮</span></div>
+              </div>
+              <div>
+                <div class="section-head">BLUETOOTH</div>
+                <div class="net-item"><b>AirPods Pro</b><span>78%</span></div>
+                <div class="net-item"><b>MX Keys</b><span>ok</span></div>
+                <div class="net-item"><b>Controller</b><span>—</span></div>
+              </div>
+              <div>
+                <div class="section-head">ЗВУК</div>
+                <div class="net-item"><b>Наушники</b><span>100%</span></div>
+                <div class="net-item"><b>Монитор</b><span>—</span></div>
+              </div>
+            </div>
+            <div class="section-head"><span>ГРОМКОСТЬ ПРИЛОЖЕНИЙ</span><span></span></div>
+            <div class="mixer-row"><div class="name">Discord</div><div class="slider"><i></i></div><div class="val">100%</div></div>
+            <div class="mixer-row"><div class="name">Chrome</div><div class="slider"><i style="right:52%"></i></div><div class="val">48%</div></div>
+            <div class="mixer-row"><div class="name">Spotify</div><div class="slider"><i style="right:28%"></i></div><div class="val">72%</div></div>
+          </div>
+
+          <!-- БУФЕР -->
+          <div class="view" data-view="clips">
+            <div class="section-head"><span>ЗАМЕТКА</span><span></span></div>
+            <div class="note">Быстрая заметка…</div>
+            <div class="section-head"><span>БУФЕР ОБМЕНА</span><span style="opacity:.6">✕</span></div>
+            <div class="clip">
+              <div class="thumb">PNG</div>
+              <div class="txt">Изображение · <small>18:21</small></div>
+              <div class="ico">📌</div><div class="ico">✕</div>
+            </div>
+            <div class="clip">
+              <div class="thumb" style="background:none;border:none;color:#8a8a96">▤</div>
+              <div class="txt">Назначена политика соответствия…</div>
+              <div class="ico">📌</div><div class="ico">✕</div>
+            </div>
+            <div class="clip">
+              <div class="thumb">PNG</div>
+              <div class="txt">Изображение · <small>17:54</small></div>
+              <div class="ico">📌</div><div class="ico">✕</div>
+            </div>
+          </div>
+
+          <!-- ПОИСК -->
+          <div class="view" data-view="search">
+            <div class="card" style="height:40px;display:flex;align-items:center;gap:10px;padding:0 12px">
+              <span style="color:var(--sub);font-size:12px">⌕</span>
+              <span style="font-size:12.5px;color:var(--text)">кал<span style="color:var(--muted)">|</span></span>
+            </div>
+            <div style="margin-top:10px">
+              <div class="clip" style="background:rgba(255,255,255,.07)"><div class="thumb" style="background:none;border:none">▦</div><div class="txt">Калькулятор <small>приложение</small></div></div>
+              <div class="clip"><div class="thumb" style="background:none;border:none">▦</div><div class="txt">Календарь <small>приложение</small></div></div>
+              <div class="clip"><div class="thumb" style="background:none;border:none">▦</div><div class="txt">Камера <small>приложение</small></div></div>
+            </div>
+            <div style="margin-top:12px;font-size:10px;color:var(--muted)">Enter — запустить · ↑↓ — выбрать · Esc — очистить</div>
+          </div>
+
+          <!-- ТАЙМЕР -->
+          <div class="view" data-view="timer">
+            <div style="display:flex;gap:8px;margin-bottom:14px">
+              <button class="preset" style="flex:1">Секундомер</button>
+              <button class="preset" style="flex:1">Таймер</button>
+              <button class="preset on" style="flex:1;background:linear-gradient(180deg,#2a9bff,var(--accent));color:#fff">Помодоро</button>
+            </div>
+            <div class="timer-grid">
+              <div class="ring-wrap">
+                <div class="ring">
+                  <svg width="190" height="190" viewBox="0 0 190 190">
+                    <circle class="track-c" cx="95" cy="95" r="85" fill="none" stroke-width="9"></circle>
+                    <circle class="prog" cx="95" cy="95" r="85" fill="none" stroke-width="9" stroke-linecap="round"></circle>
+                  </svg>
+                  <div class="ring-label"><b id="ring-time">25:00</b><span>работа</span></div>
+                </div>
+              </div>
+              <div class="timer-side">
+                <button class="pill pill-main">Старт</button>
+                <button class="pill pill-ghost">Сброс</button>
+                <button class="pill pill-ghost">+1 мин</button>
+              </div>
+            </div>
+            <div class="presets">
+              <button class="preset">5 мин</button>
+              <button class="preset">10 мин</button>
+              <button class="preset">15 мин</button>
+              <button class="preset on">25 мин</button>
+              <button class="preset">45 мин</button>
+            </div>
+          </div>
+
+          <!-- НАСТРОЙКИ -->
+          <div class="view" data-view="settings">
+            <div class="section-head"><span>ТЕМА И РАЗМЕР</span><span></span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <span style="font-size:12px">Тема</span>
+              <div style="display:flex;gap:6px">
+                <button class="preset on">Тёмная</button>
+                <button class="preset">Светлая</button>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <span style="font-size:12px">Палитра</span>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span style="width:16px;height:16px;border-radius:50%;background:#0a84ff;box-shadow:0 0 0 2px rgba(255,255,255,.75)"></span>
+                <span style="width:16px;height:16px;border-radius:50%;background:#5b6cff"></span>
+                <span style="width:16px;height:16px;border-radius:50%;background:#3ddc84"></span>
+                <span style="width:16px;height:16px;border-radius:50%;background:#c9a06a"></span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px">Язык</span>
+              <div style="display:flex;gap:6px">
+                <button class="preset on">RU</button>
+                <button class="preset">EN</button>
+              </div>
+            </div>
+            <div class="section-head" style="margin-top:22px"><span>ПОВЕДЕНИЕ</span><span></span></div>
+            <div class="mixer-row"><div class="name" style="width:auto;flex:1;font-size:12px">Раскрывать при наведении</div><span style="width:34px;height:20px;border-radius:999px;background:var(--accent);position:relative"><i style="position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff"></i></span></div>
+            <div class="mixer-row"><div class="name" style="width:auto;flex:1;font-size:12px">Прятать в полноэкранном режиме</div><span style="width:34px;height:20px;border-radius:999px;background:var(--accent);position:relative"><i style="position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff"></i></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapse-toggle">
+      <button class="btn btn-ghost btn-sm" id="expand">Свернуть остров</button>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Возможности</div>
+      <h2>Всё, что нужно каждый день —<br>в одном месте</h2>
+      <p class="section-lead">
+        Семь вкладок, которые открываются в один клик: от микшера по приложениям
+        до помодоро с кольцом прогресса.
+      </p>
+    </div>
+
+    <div class="features">
+      <div class="feature reveal">
+        <div class="icon">♪</div>
+        <h3>Медиа</h3>
+        <p>Обложка, трек, прогресс и текст песни. Работает с Яндекс Музыкой, Spotify,
+        браузером и любым плеером, который умеет Windows.</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">◧</div>
+        <h3>Микшер по приложениям</h3>
+        <p>Своя громкость и mute для каждого приложения. Сессии одного процесса
+        сгруппированы — один ползунок управляет всеми окнами.</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">◷</div>
+        <h3>Таймер и помодоро</h3>
+        <p>Секундомер, обратный отсчёт и помодоро. Кольцо прогресса в панели,
+        компактный чип в свёрнутой плашке и мягкий сигнал в конце.</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">⌘</div>
+        <h3>Поиск и запуск</h3>
+        <p>Приложения из меню «Пуск», калькулятор прямо в строке, курсы валют
+        и поиск в интернете — без открытия браузера.</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">▤</div>
+        <h3>Буфер обмена</h3>
+        <p>Текст и скриншоты с миниатюрами, закрепление важного, удаление лишнего
+        и быстрая заметка, которая всегда под рукой.</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">◉</div>
+        <h3>Система и сеть</h3>
+        <p>CPU, память, батарея, температура, Wi-Fi и Bluetooth, устройства вывода
+        звука, ночной свет и режим стримера.</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">◱</div>
+        <h3>Пять тем</h3>
+        <p>Graphite, Midnight, Nord, Mono и Sand. Светлая и тёмная тема, акцент
+        из обоев, «стекло» и три размера острова.</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">◐</div>
+        <h3>Полноэкранный режим</h3>
+        <p>Игра или кино на весь экран — остров прячется сам и возвращается,
+        когда вы выходите. Он не мешает и не крадёт фокус.</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">⌨</div>
+        <h3>RU / EN и клавиатура</h3>
+        <p>Русский и английский на лету, горячие клавиши для поиска и mute,
+        управление громкостью колесом мыши.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="shots">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Скриншоты</div>
+      <h2>Как это выглядит</h2>
+      <p class="section-lead">Настоящие снимки приложения — без мокапов и ретуши.</p>
+    </div>
+
+    <div class="shots">
+      <figure class="shot reveal" style="margin:0">
+        <img src="assets/timer.png" alt="Вкладка «Таймер»: помодоро 24:57 с кольцом прогресса">
+        <figcaption>Помодоро: кольцо прогресса и чип в свёрнутой плашке</figcaption>
+      </figure>
+      <figure class="shot reveal" style="margin:0">
+        <img src="assets/clips.png" alt="Вкладка «Буфер»: заметка, картинки и текст">
+        <figcaption>Буфер обмена: картинки, закрепление и быстрая заметка</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Плавность</div>
+      <h2>Почему анимации не дёргаются</h2>
+      <p class="section-lead">
+        Остров перерисовывается каждый кадр, поэтому всё тяжёлое вынесено
+        из UI-потока и никогда не попадает в середину анимации.
+      </p>
+    </div>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="num">01</div>
+        <h3>Данные — вне UI-потока</h3>
+        <p>WMI, DDC/CI, COM и WinRT опрашиваются в <code>Task.Run</code>,
+        а в интерфейс возвращаются одним пакетом через
+        <code>Dispatcher.InvokeAsync</code>.</p>
+      </div>
+      <div class="step reveal">
+        <div class="num">02</div>
+        <h3>Layout заморожен</h3>
+        <p>На время морфинга высота панели фиксируется, чтобы WPF не
+        пересчитывал всё поддерево на каждом кадре. Размер снимается
+        один раз до старта анимации.</p>
+      </div>
+      <div class="step reveal">
+        <div class="num">03</div>
+        <h3>Одна кривая на все переходы</h3>
+        <p><code>QuinticEase.EaseOut</code>, 440 мс раскрытие и 300 мс
+        сворачивание, кроссфейд вкладок со сдвигом на 8 px, тень
+        отключается на время перехода.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Установка</div>
+      <h2>Собрать за минуту</h2>
+      <p class="section-lead">
+        Нужен Windows 10 (19041+) или Windows 11 и .NET 8 SDK.
+        Настройки и буфер обмена хранятся в <code style="font-family:Consolas,monospace">%APPDATA%\Salli</code>.
+      </p>
+    </div>
+
+    <div class="install reveal">
+      <div class="install-head">
+        <span>PowerShell</span>
+        <button class="btn btn-ghost btn-sm" id="copy">Скопировать</button>
+      </div>
+      <pre id="code"><span class="c"># клонируйте репозиторий</span>
+<span class="k">git</span> clone https://github.com/ficksj/Salli.git
+<span class="k">cd</span> salli
+
+<span class="c"># соберите и запустите</span>
+<span class="k">dotnet</span> build -c Release
+.\bin\Release\net8.0-windows10.0.19041.0\Salli.exe
+
+<span class="c"># или один самодостаточный .exe</span>
+<span class="k">dotnet</span> publish -c Release -r win-x64 --self-contained <span class="s">true</span> `
+  -p:PublishSingleFile=<span class="s">true</span> -p:IncludeNativeLibrariesForSelfExtract=<span class="s">true</span></pre>
+    </div>
+
+    <div class="reveal">
+      <table class="keys">
+        <tr><td><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Space</kbd></td><td>Открыть остров и перейти к поиску</td></tr>
+        <tr><td><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>M</kbd></td><td>Выключить или включить звук</td></tr>
+        <tr><td>Колесо мыши над плашкой</td><td>Громкость (можно отключить в настройках)</td></tr>
+        <tr><td><kbd>Enter</kbd> · <kbd>Esc</kbd></td><td>Запустить результат · очистить поиск</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>Salli — динамический остров для Windows · MIT © 2026</div>
+    <div style="display:flex;gap:20px">
+      <a href="#features">Возможности</a>
+      <a href="#install">Установка</a>
+      <a href="https://github.com/ficksj/Salli" target="_blank" rel="noreferrer">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── tabs ────────────────────────────────────────────────────────────────
+  const tabs = document.querySelectorAll('.tab');
+  const views = document.querySelectorAll('.view');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const id = tab.dataset.view;
+      tabs.forEach(t => t.classList.toggle('active', t === tab));
+      views.forEach(v => v.classList.toggle('active', v.dataset.view === id));
+      resetRing();
+    });
+  });
+
+  // ── collapse / expand ───────────────────────────────────────────────────
+  const island = document.getElementById('island');
+  const toggle = document.getElementById('collapse');
+  const expand = document.getElementById('expand');
+
+  function collapse() {
+    island.classList.add('collapsed');
+    toggle.innerHTML = '&#xe70d;';
+    expand.textContent = 'Развернуть остров';
+  }
+  function expandIsland() {
+    island.classList.remove('collapsed');
+    toggle.innerHTML = '&#xe70e;';
+    expand.textContent = 'Свернуть остров';
+  }
+
+  toggle.addEventListener('click', () =>
+    island.classList.contains('collapsed') ? expandIsland() : collapse());
+  expand.addEventListener('click', () =>
+    island.classList.contains('collapsed') ? expandIsland() : collapse());
+
+  // ── clock ───────────────────────────────────────────────────────────────
+  const clock = document.getElementById('clock');
+  function tick() {
+    const d = new Date();
+    clock.textContent = String(d.getHours()).padStart(2, '0') + ':' +
+                        String(d.getMinutes()).padStart(2, '0');
+  }
+  tick();
+  setInterval(tick, 20000);
+
+  // ── pomodoro ring ───────────────────────────────────────────────────────
+  const ringTime = document.getElementById('ring-time');
+  let left = 25 * 60;
+  let timer = null;
+
+  function resetRing() {
+    left = 25 * 60;
+    ringTime.textContent = '25:00';
+    clearInterval(timer);
+    timer = null;
+  }
+
+  function runRing() {
+    if (timer) return;
+    timer = setInterval(() => {
+      left = left > 0 ? left - 1 : 25 * 60;
+      ringTime.textContent =
+        String(Math.floor(left / 60)).padStart(2, '0') + ':' +
+        String(left % 60).padStart(2, '0');
+    }, 1000);
+  }
+
+  runRing();
+
+  // ── reveal on scroll ────────────────────────────────────────────────────
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: .12 });
+
+  document.querySelectorAll('.reveal').forEach((el, i) => {
+    el.style.transitionDelay = (i % 4) * 60 + 'ms';
+    io.observe(el);
+  });
+
+  // ── pointer glow on feature cards ───────────────────────────────────────
+  document.querySelectorAll('.feature').forEach(card => {
+    card.addEventListener('pointermove', e => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+      card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+    });
+  });
+
+  // ── copy button ─────────────────────────────────────────────────────────
+  const copy = document.getElementById('copy');
+  copy.addEventListener('click', async () => {
+    const text = document.getElementById('code').innerText
+      .split('\n').map(l => l.replace(/^\s*#.*$/, '')).join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      copy.textContent = 'Скопировано';
+    } catch {
+      copy.textContent = 'Не удалось';
+    }
+    setTimeout(() => copy.textContent = 'Скопировать', 1600);
+  });
+</script>
+</body>
+</html>

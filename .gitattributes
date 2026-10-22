@@ -1,0 +1,12 @@
+* text=auto
+
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf
+*.cs    text diff=csharp

@@ -1,0 +1,14 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+
+# Published builds
+publish/
+*.pdb
+
+# Local artefacts
+*.log

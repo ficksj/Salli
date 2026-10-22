@@ -1,0 +1,1047 @@
+<Window x:Class="Salli.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Salli"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        ResizeMode="NoResize"
+        ShowActivated="False"
+        SizeToContent="Manual"
+        Width="640" Height="520"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <Window.Resources>
+        <Style x:Key="Glyph" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        </Style>
+
+        <Style x:Key="Round" TargetType="Button">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="14">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Tab" TargetType="Button">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Margin" Value="1,0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="9">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSoftBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Slim" TargetType="Slider">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="22" VerticalAlignment="Center">
+                            <Border Height="5" CornerRadius="2.5" Background="{DynamicResource TrackBrush}" VerticalAlignment="Center"/>
+                            <Track x:Name="PART_Track" VerticalAlignment="Center">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="5" CornerRadius="2.5" Background="{DynamicResource TextBrush}"
+                                                        VerticalAlignment="Center"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="5" Background="Transparent" VerticalAlignment="Center"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Width="14" Height="14" Cursor="Hand">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Ellipse Width="14" Height="14" Fill="{DynamicResource TextBrush}">
+                                                    <Ellipse.Effect>
+                                                        <DropShadowEffect ShadowDepth="1" BlurRadius="3" Opacity="0.35" Color="Black"/>
+                                                    </Ellipse.Effect>
+                                                </Ellipse>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Switch" TargetType="ToggleButton">
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bg" Background="{DynamicResource TrackBrush}" CornerRadius="11">
+                            <Ellipse x:Name="Knob" Width="16" Height="16" Fill="White"
+                                     HorizontalAlignment="Left" Margin="3,0,0,0">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect ShadowDepth="1" BlurRadius="3" Opacity="0.3" Color="Black"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="Knob" Property="Margin" Value="0,0,3,0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Seg" TargetType="Button">
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Padding" Value="9,0"/>
+            <Setter Property="Margin" Value="3,0,0,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Primary" TargetType="Button">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="11"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.86"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Dot" TargetType="Button">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Margin" Value="3,0,0,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse x:Name="Ring" Width="22" Height="22" Stroke="{TemplateBinding BorderBrush}"
+                                     StrokeThickness="1.6"/>
+                            <Ellipse Width="14" Height="14" Fill="{TemplateBinding Background}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Ring" Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="RowButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="6,4">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardSoftBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SectionHead" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubBrush}"/>
+            <Setter Property="Margin" Value="2,0,0,4"/>
+        </Style>
+
+        <Style x:Key="StatTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="{DynamicResource SubBrush}"/>
+        </Style>
+
+        <Style x:Key="StatValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- The window is a transparent canvas; WM_NCHITTEST makes everything
+         outside the island click-through. -->
+    <Grid>
+        <Border x:Name="Island" Width="420" Height="48" CornerRadius="0,0,22,22"
+                Background="{DynamicResource SurfaceBrush}"
+                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0"
+                ClipToBounds="True"
+                MouseLeftButtonUp="Island_MouseLeftButtonUp"
+                MouseEnter="Island_MouseEnter"
+                MouseLeave="Island_MouseLeave"
+                PreviewMouseWheel="Island_PreviewMouseWheel"
+                PreviewMouseLeftButtonDown="Island_PreviewMouseDown"
+                PreviewMouseMove="Island_PreviewMouseMove"
+                PreviewMouseLeftButtonUp="Island_PreviewMouseUp">
+            <Border.Effect>
+                <DropShadowEffect x:Name="IslandShadow" BlurRadius="20" ShadowDepth="4" Opacity="0.42" Color="Black"/>
+            </Border.Effect>
+            <Grid>
+
+                <!-- ═════════ compact bar, flush with the top edge ═════════ -->
+                <Border x:Name="CollapsedPanel" VerticalAlignment="Top">
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="CollapsedShift" Y="0"/>
+                    </Border.RenderTransform>
+                    <Grid Margin="0">
+                        <Grid.LayoutTransform>
+                            <ScaleTransform x:Name="BarScale" ScaleX="1" ScaleY="1"/>
+                        </Grid.LayoutTransform>
+                        <Grid Height="48" Margin="15,0,15,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border x:Name="MiniArt" Width="28" Height="28" CornerRadius="8"
+                                    Background="{DynamicResource TrackBrush}" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Margin="10,0,12,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="CompactTitle" FontSize="12.5" FontWeight="SemiBold"
+                                           MaxWidth="190" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock x:Name="CompactArtist" FontSize="10.5" Foreground="{DynamicResource SubBrush}"
+                                           MaxWidth="190" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+
+                            <StackPanel x:Name="BarWeatherBox" Grid.Column="2" Orientation="Horizontal"
+                                        VerticalAlignment="Center" Margin="0,0,14,0" Visibility="Collapsed">
+                                <TextBlock x:Name="BarWeatherGlyph" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12.5"
+                                           Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="BarWeatherTemp" FontSize="11" Foreground="{DynamicResource MutedBrush}"
+                                           VerticalAlignment="Center" Margin="5,0,0,0"/>
+                            </StackPanel>
+
+                            <TextBlock x:Name="BarCpu" Grid.Column="3" FontSize="11" Foreground="{DynamicResource MutedBrush}"
+                                       VerticalAlignment="Center" Margin="0,0,14,0"/>
+
+                            <StackPanel x:Name="BarTimer" Grid.Column="4" Orientation="Horizontal"
+                                        VerticalAlignment="Center" Margin="0,0,14,0" Visibility="Collapsed"
+                                        ToolTip="Таймер">
+                                <Grid Width="22" Height="22">
+                                    <Ellipse Width="22" Height="22" Stroke="{DynamicResource TrackBrush}" StrokeThickness="2.5"/>
+                                    <Path x:Name="BarRing" Stroke="{DynamicResource AccentBrush}" StrokeThickness="2.5"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                </Grid>
+                                <TextBlock x:Name="BarTimerText" FontSize="11" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" Margin="6,0,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="CompactTime" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Text="  ·  " Foreground="{DynamicResource SubBrush}" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="CompactDate" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center"
+                                        Margin="14,0,0,0">
+                                <TextBlock x:Name="CompactMic" Text="&#xE720;" Style="{StaticResource Glyph}"
+                                           FontSize="13" Margin="0,0,7,0" Foreground="{DynamicResource BadBrush}"
+                                           Visibility="Collapsed" ToolTip="Микрофон используется"/>
+                                <TextBlock x:Name="CompactWifi" Style="{StaticResource Glyph}" FontSize="12" Margin="0,0,7,0"/>
+                                <TextBlock x:Name="CompactBt"   Style="{StaticResource Glyph}" FontSize="12" Margin="0,0,7,0"/>
+                                <TextBlock x:Name="CompactVol"  Style="{StaticResource Glyph}" FontSize="12" Margin="0,0,7,0"
+                                           Foreground="{DynamicResource MutedBrush}"/>
+                                <TextBlock x:Name="CompactBattery" FontSize="11.5" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="CompactBolt" Text="&#xE945;" Style="{StaticResource Glyph}"
+                                           FontSize="10" Margin="3,0,0,0" Visibility="Collapsed"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- ═════════ notification ═════════ -->
+                <Border x:Name="NotificationPanel" Visibility="Collapsed" VerticalAlignment="Top">
+                    <Border.LayoutTransform>
+                        <ScaleTransform x:Name="NoteScale" ScaleX="1" ScaleY="1"/>
+                    </Border.LayoutTransform>
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="NotificationShift" Y="0"/>
+                    </Border.RenderTransform>
+                    <Grid Height="48" Margin="15,0,15,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="28" Height="28" CornerRadius="8" Background="{DynamicResource TrackBrush}" VerticalAlignment="Center">
+                            <TextBlock x:Name="NoteGlyph" Style="{StaticResource Glyph}" FontSize="13"/>
+                        </Border>
+                        <TextBlock x:Name="NoteTitle" Grid.Column="1" FontSize="12.5" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <TextBlock x:Name="NoteText" Grid.Column="2" FontSize="11.5" Foreground="{DynamicResource MutedBrush}"
+                                   VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis"
+                                   MaxWidth="300"/>
+                    </Grid>
+                </Border>
+
+                <!-- ═════════ expanded card ═════════ -->
+                <Border x:Name="ExpandedPanel" Visibility="Collapsed" VerticalAlignment="Top"
+                        Padding="16,12,16,14" MinWidth="488" Width="520">
+                    <Border.LayoutTransform>
+                        <ScaleTransform x:Name="PanelScale" ScaleX="1" ScaleY="1"/>
+                    </Border.LayoutTransform>
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="ExpandedShift" Y="0"/>
+                    </Border.RenderTransform>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- header -->
+                        <Grid Margin="2,0,2,8">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="BigTime" FontSize="28" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <StackPanel Margin="10,4,0,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="BigDate" FontSize="12.5" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="BigWeekday" FontSize="11.5" Foreground="{DynamicResource SubBrush}" Margin="0,-1,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button x:Name="PinBtn" Style="{StaticResource Round}" Click="Pin_Click" ToolTip="Закрепить панель">
+                                    <TextBlock x:Name="PinGlyph" Text="&#xE718;" Style="{StaticResource Glyph}" FontSize="10"/>
+                                </Button>
+                                <Button Style="{StaticResource Round}" Margin="6,0,0,0" Click="Settings_Click" ToolTip="Настройки">
+                                    <TextBlock Text="&#xE713;" Style="{StaticResource Glyph}" FontSize="11"/>
+                                </Button>
+                                <Button Style="{StaticResource Round}" Margin="6,0,0,0" Click="Collapse_Click" ToolTip="Свернуть">
+                                    <TextBlock Text="&#xE70E;" Style="{StaticResource Glyph}" FontSize="9"/>
+                                </Button>
+                                <Button Style="{StaticResource Round}" Margin="6,0,0,0" Click="Quit_Click" ToolTip="Закрыть Salli">
+                                    <TextBlock Text="&#xE711;" Style="{StaticResource Glyph}" FontSize="9"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- tabs -->
+                        <UniformGrid Grid.Row="1" Columns="7" Margin="0,0,0,8">
+                            <Button x:Name="TabMedia" Style="{StaticResource Tab}" Content="Медиа" Tag="media" Click="Tab_Click"/>
+                            <Button x:Name="TabSystem" Style="{StaticResource Tab}" Content="Система" Tag="system" Click="Tab_Click"/>
+                            <Button x:Name="TabNets" Style="{StaticResource Tab}" Content="Сети" Tag="nets" Click="Tab_Click"/>
+                            <Button x:Name="TabBuffer" Style="{StaticResource Tab}" Content="Буфер" Tag="buffer" Click="Tab_Click"/>
+                            <Button x:Name="TabSearch" Style="{StaticResource Tab}" Content="Поиск" Tag="search" Click="Tab_Click"/>
+                            <Button x:Name="TabTimer" Style="{StaticResource Tab}" Content="Таймер" Tag="timer" Click="Tab_Click"/>
+                            <Button x:Name="TabSettings" Style="{StaticResource Tab}" Content="Настройки" Tag="settings" Click="Tab_Click"/>
+                        </UniformGrid>
+
+                        <!-- content -->
+                        <Grid x:Name="TabContent" Grid.Row="2" MinHeight="250" RenderTransformOrigin="0.5,0">
+                            <Grid.RenderTransform>
+                                <TranslateTransform x:Name="TabShift" Y="0"/>
+                            </Grid.RenderTransform>
+
+                            <!-- ═════ МЕДИА ═════ -->
+                            <Grid x:Name="MediaTab" Visibility="Visible">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <Border x:Name="MediaCard" Background="{DynamicResource CardBrush}" CornerRadius="16"
+                                        Padding="12,10" Visibility="Collapsed">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Border x:Name="ArtBox" Width="44" Height="44" CornerRadius="11"
+                                                    Background="{DynamicResource TrackBrush}" VerticalAlignment="Center"/>
+
+                                            <StackPanel Grid.Column="1" Margin="11,0,10,0" VerticalAlignment="Center">
+                                                <TextBlock x:Name="TrackTitle" FontSize="13.5" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis" MaxWidth="250"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                                    <TextBlock x:Name="TrackArtist" FontSize="11" Foreground="{DynamicResource SubBrush}"
+                                                               TextTrimming="CharacterEllipsis" MaxWidth="190" VerticalAlignment="Center"/>
+                                                    <Border x:Name="SourcePill" CornerRadius="6" Background="{DynamicResource CardSoftBrush}"
+                                                            Padding="5,1" Margin="7,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock x:Name="SourceGlyph" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                       FontSize="9" Foreground="{DynamicResource SubBrush}" VerticalAlignment="Center"/>
+                                                            <TextBlock x:Name="SourceName" FontSize="9" Margin="3,0,0,0"
+                                                                       Foreground="{DynamicResource SubBrush}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button x:Name="LikeBtn" Style="{StaticResource Round}" Click="Like_Click"
+                                                        ToolTip="В избранное" Width="26" Height="26" Background="Transparent">
+                                                    <TextBlock x:Name="LikeGlyph" Text="&#xEB51;" Style="{StaticResource Glyph}" FontSize="13"
+                                                               Foreground="{DynamicResource SubBrush}"/>
+                                                </Button>
+                                                <Button Style="{StaticResource Round}" Click="Prev_Click" ToolTip="Предыдущий" Width="26" Height="26">
+                                                    <TextBlock Text="&#xE892;" Style="{StaticResource Glyph}" FontSize="9"/>
+                                                </Button>
+                                                <Button Style="{StaticResource Round}" Margin="5,0" Click="Play_Click"
+                                                        Background="{DynamicResource TextBrush}" ToolTip="Пауза / играть">
+                                                    <TextBlock x:Name="PlayGlyph" Text="&#xE768;"
+                                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                               FontSize="10" Foreground="{DynamicResource SurfaceSolidBrush}"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Button>
+                                                <Button Style="{StaticResource Round}" Click="Next_Click" ToolTip="Следующий" Width="26" Height="26">
+                                                    <TextBlock Text="&#xE893;" Style="{StaticResource Glyph}" FontSize="9"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Grid x:Name="ProgressHost" Height="14" Margin="0,7,0,0" Background="Transparent"
+                                              Cursor="Hand"
+                                              MouseLeftButtonDown="Progress_MouseDown"
+                                              MouseMove="Progress_MouseMove"
+                                              MouseLeftButtonUp="Progress_MouseUp"
+                                              MouseEnter="Progress_MouseEnter"
+                                              MouseLeave="Progress_MouseLeave">
+                                            <Border Height="4" CornerRadius="2" Background="{DynamicResource TrackBrush}" VerticalAlignment="Center"/>
+                                            <Border x:Name="ProgressFill" Height="4" CornerRadius="2" Background="{DynamicResource TextBrush}"
+                                                    VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                                                    RenderTransformOrigin="0,0.5">
+                                                <Border.RenderTransform>
+                                                    <ScaleTransform x:Name="ProgressScale" ScaleX="0"/>
+                                                </Border.RenderTransform>
+                                            </Border>
+                                            <Ellipse x:Name="ProgressThumb" Width="10" Height="10" Fill="White"
+                                                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                     Margin="-5,0,0,0" Visibility="Collapsed">
+                                                <Ellipse.Effect>
+                                                    <DropShadowEffect ShadowDepth="1" BlurRadius="4" Opacity="0.5" Color="Black"/>
+                                                </Ellipse.Effect>
+                                            </Ellipse>
+                                        </Grid>
+
+                                        <Grid>
+                                            <TextBlock x:Name="PosText" FontSize="10" Foreground="{DynamicResource SubBrush}"/>
+                                            <TextBlock x:Name="DurText" FontSize="10" Foreground="{DynamicResource SubBrush}" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock x:Name="EmptyMedia" Grid.Row="1" Text="Ничего не играет"
+                                           FontSize="11.5" Foreground="{DynamicResource SubBrush}"
+                                           HorizontalAlignment="Center" Margin="0,14,0,0"/>
+
+                                <!-- karaoke -->
+                                <Border x:Name="LyricsBox" Grid.Row="1" Height="132" Margin="0,8,0,0"
+                                        Background="{DynamicResource CardSoftBrush}" CornerRadius="14"
+                                        Padding="14,10" Visibility="Visible">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock x:Name="LyricPrev" FontSize="10.5" Foreground="{DynamicResource SubBrush}"
+                                                   TextAlignment="Center" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="LyricKaraoke" Grid.Row="1" FontSize="14" FontWeight="SemiBold"
+                                                   TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center"
+                                                   LineHeight="19"/>
+                                        <TextBlock x:Name="LyricNext" Grid.Row="2" FontSize="10.5" Foreground="{DynamicResource SubBrush}"
+                                                   TextAlignment="Center" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <Grid Grid.Row="2" Margin="0,8,0,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Сдвиг слов" FontSize="10" Foreground="{DynamicResource SubBrush}"
+                                                   VerticalAlignment="Center" Margin="2,0,7,0"/>
+                                        <Button Style="{StaticResource Seg}" Content="−0.5" Click="OffsetDown_Click" Height="22"/>
+                                        <TextBlock x:Name="OffsetText" FontSize="10.5" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" Margin="8,0" MinWidth="34" TextAlignment="Center"/>
+                                        <Button Style="{StaticResource Seg}" Content="+0.5" Click="OffsetUp_Click" Height="22"/>
+                                    </StackPanel>
+
+                                    <StackPanel x:Name="EqualizerBox" Orientation="Horizontal" HorizontalAlignment="Right"
+                                                VerticalAlignment="Center" Height="26">
+                                        <Border x:Name="Eq1" Width="3" Height="6" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
+                                        <Border x:Name="Eq2" Width="3" Height="10" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
+                                        <Border x:Name="Eq3" Width="3" Height="14" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
+                                        <Border x:Name="Eq4" Width="3" Height="16" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
+                                        <Border x:Name="Eq5" Width="3" Height="8" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Button x:Name="FavoritesButton" Grid.Row="3" Style="{StaticResource RowButton}"
+                                        VerticalAlignment="Bottom" Click="Favorites_Click" Visibility="Collapsed">
+                                    <TextBlock x:Name="FavoritesText" FontSize="10" Foreground="{DynamicResource SubBrush}"/>
+                                </Button>
+                            </Grid>
+
+                            <!-- ═════ СИСТЕМА ═════ -->
+                            <Grid x:Name="SystemTab" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <UniformGrid Columns="2" Rows="2" Margin="-3,0,-3,0">
+                                    <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Padding="10,8" Margin="3">
+                                        <StackPanel>
+                                            <Grid>
+                                                <TextBlock Text="CPU" Style="{StaticResource StatTitle}"/>
+                                                <TextBlock x:Name="CpuValue" Text="—" Style="{StaticResource StatValue}" HorizontalAlignment="Right"/>
+                                            </Grid>
+                                            <Grid Height="3" Margin="0,6,0,0">
+                                                <Border CornerRadius="1.5" Background="{DynamicResource TrackBrush}"/>
+                                                <Border x:Name="CpuFill" CornerRadius="1.5" Background="{DynamicResource GoodBrush}"
+                                                        HorizontalAlignment="Stretch" RenderTransformOrigin="0,0.5">
+                                                    <Border.RenderTransform>
+                                                        <ScaleTransform x:Name="CpuScale" ScaleX="0"/>
+                                                    </Border.RenderTransform>
+                                                </Border>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Padding="10,8" Margin="3">
+                                        <StackPanel>
+                                            <Grid>
+                                                <TextBlock Text="RAM" Style="{StaticResource StatTitle}"/>
+                                                <TextBlock x:Name="RamValue" Text="—" Style="{StaticResource StatValue}" HorizontalAlignment="Right"/>
+                                            </Grid>
+                                            <Grid Height="3" Margin="0,6,0,0">
+                                                <Border CornerRadius="1.5" Background="{DynamicResource TrackBrush}"/>
+                                                <Border x:Name="RamFill" CornerRadius="1.5" Background="{DynamicResource AccentBrush}"
+                                                        HorizontalAlignment="Stretch" RenderTransformOrigin="0,0.5">
+                                                    <Border.RenderTransform>
+                                                        <ScaleTransform x:Name="RamScale" ScaleX="0"/>
+                                                    </Border.RenderTransform>
+                                                </Border>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Padding="10,8" Margin="3">
+                                        <StackPanel>
+                                            <Grid>
+                                                <TextBlock Text="Диск" Style="{StaticResource StatTitle}"/>
+                                                <TextBlock x:Name="DiskValue" Text="—" Style="{StaticResource StatValue}" HorizontalAlignment="Right"/>
+                                            </Grid>
+                                            <Grid Height="3" Margin="0,6,0,0">
+                                                <Border CornerRadius="1.5" Background="{DynamicResource TrackBrush}"/>
+                                                <Border x:Name="DiskFill" CornerRadius="1.5" Background="{DynamicResource WarnBrush}"
+                                                        HorizontalAlignment="Stretch" RenderTransformOrigin="0,0.5">
+                                                    <Border.RenderTransform>
+                                                        <ScaleTransform x:Name="DiskScale" ScaleX="0"/>
+                                                    </Border.RenderTransform>
+                                                </Border>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Padding="10,8" Margin="3">
+                                        <StackPanel>
+                                            <Grid>
+                                                <TextBlock Text="Сеть" Style="{StaticResource StatTitle}"/>
+                                                <TextBlock x:Name="NetSub" Text="" FontSize="9" Foreground="{DynamicResource SubBrush}"
+                                                           HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                            </Grid>
+                                            <TextBlock x:Name="NetValue" Text="—" FontSize="12" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </UniformGrid>
+
+                                <StackPanel Grid.Row="1" Margin="2,8,2,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="20"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="38"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="VolIcon" Text="&#xE767;" Style="{StaticResource Glyph}"
+                                                   FontSize="12" VerticalAlignment="Center" Cursor="Hand"
+                                                   MouseLeftButtonUp="VolIcon_Click" ToolTip="Заглушить"/>
+                                        <Slider x:Name="VolumeSlider" Grid.Column="1" Style="{StaticResource Slim}"
+                                                Minimum="0" Maximum="100" IsMoveToPointEnabled="True"
+                                                ValueChanged="VolumeSlider_ValueChanged"/>
+                                        <TextBlock x:Name="VolumeValue" Grid.Column="2" FontSize="10.5"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource MutedBrush}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="20"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="38"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="&#xE706;" Style="{StaticResource Glyph}" FontSize="12" VerticalAlignment="Center"/>
+                                        <Slider x:Name="BrightSlider" Grid.Column="1" Style="{StaticResource Slim}"
+                                                Minimum="0" Maximum="100" IsMoveToPointEnabled="True"
+                                                ValueChanged="BrightSlider_ValueChanged"/>
+                                        <TextBlock x:Name="BrightValue" Grid.Column="2" FontSize="10.5"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource MutedBrush}"/>
+                                    </Grid>
+                                </StackPanel>
+
+                                <Grid Grid.Row="2" Margin="2,6,2,6">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock x:Name="BatteryGlyph" Text="&#xE83F;" Style="{StaticResource Glyph}" FontSize="12"
+                                                   Foreground="{DynamicResource SubBrush}" Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="BatteryText2" FontSize="11" Foreground="{DynamicResource MutedBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button x:Name="NightBtn" Style="{StaticResource Seg}" Content="Ночной" Click="Night_Click" Height="22"/>
+                                        <Button Style="{StaticResource Seg}" Content="Не беспокоить" Click="Focus_Click" Height="22"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="3">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Margin="2,0,2,4">
+                                        <TextBlock Text="НАГРУЗКА" Style="{StaticResource SectionHead}"/>
+                                        <TextBlock Text="процессор / память" FontSize="9" Foreground="{DynamicResource SubBrush}"
+                                                   HorizontalAlignment="Right"/>
+                                    </Grid>
+                                    <StackPanel x:Name="ProcessList" Grid.Row="1"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- ═════ СЕТИ ═════ -->
+                            <Grid x:Name="NetsTab" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="172"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid Margin="0,0,6,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid>
+                                        <TextBlock Text="WI-FI" Style="{StaticResource SectionHead}"/>
+                                        <Button Style="{StaticResource Round}" Width="18" Height="18" HorizontalAlignment="Right"
+                                                Click="RefreshNets_Click" Background="Transparent" ToolTip="Обновить">
+                                            <TextBlock Text="&#xE72C;" Style="{StaticResource Glyph}" FontSize="9"
+                                                       Foreground="{DynamicResource SubBrush}"/>
+                                        </Button>
+                                    </Grid>
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                                        <StackPanel x:Name="WifiList"/>
+                                    </ScrollViewer>
+                                </Grid>
+
+                                <Grid Grid.Column="1" Margin="6,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid>
+                                        <TextBlock Text="BLUETOOTH" Style="{StaticResource SectionHead}"/>
+                                        <Button Style="{StaticResource Round}" Width="18" Height="18" HorizontalAlignment="Right"
+                                                Click="BtSettings_Click" Background="Transparent" ToolTip="Параметры Bluetooth">
+                                            <TextBlock Text="&#xE713;" Style="{StaticResource Glyph}" FontSize="9"
+                                                       Foreground="{DynamicResource SubBrush}"/>
+                                        </Button>
+                                    </Grid>
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                                        <StackPanel x:Name="BtList"/>
+                                    </ScrollViewer>
+                                </Grid>
+
+                                <Grid Grid.Column="2" Margin="6,0,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="ЗВУК" Style="{StaticResource SectionHead}"/>
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                                        <StackPanel x:Name="AudioList"/>
+                                    </ScrollViewer>
+                                </Grid>
+                                </Grid>
+
+                                <!-- per-app mixer -->
+                                <Grid Grid.Row="1" Margin="0,10,0,6">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Margin="2,0,2,4">
+                                        <TextBlock Text="Громкость приложений" Style="{StaticResource SectionHead}"/>
+                                        <Button Style="{StaticResource Round}" Width="18" Height="18" HorizontalAlignment="Right"
+                                                Click="RefreshMixer_Click" Background="Transparent" ToolTip="Обновить">
+                                            <TextBlock Text="&#xE72C;" Style="{StaticResource Glyph}" FontSize="9"
+                                                       Foreground="{DynamicResource SubBrush}"/>
+                                        </Button>
+                                    </Grid>
+                                    <ScrollViewer Grid.Row="1" MaxHeight="104" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                                        <StackPanel x:Name="MixerList"/>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Grid>
+
+                            <!-- ═════ БУФЕР + ЗАМЕТКА ═════ -->
+                            <Grid x:Name="BufferTab" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Margin="2,0,2,4">
+                                    <TextBlock Text="ЗАМЕТКА" Style="{StaticResource SectionHead}"/>
+                                    <TextBlock x:Name="NoteSaved" Text="сохранено" FontSize="9" Foreground="{DynamicResource SubBrush}"
+                                               HorizontalAlignment="Right" Opacity="0"/>
+                                </Grid>
+
+                                <Border Grid.Row="1" Background="{DynamicResource CardBrush}" CornerRadius="12" Padding="2">
+                                    <Grid>
+                                        <TextBox x:Name="NoteBox" Height="56" AcceptsReturn="True" TextWrapping="Wrap"
+                                                 VerticalScrollBarVisibility="Auto" Background="Transparent"
+                                                 FontSize="11.5" TextChanged="NoteBox_TextChanged"/>
+                                        <TextBlock x:Name="NotePlaceholder" Text="Быстрая заметка…"
+                                                   Margin="10,8,0,0" FontSize="11.5" IsHitTestVisible="False"
+                                                   Foreground="{DynamicResource SubBrush}" Visibility="Collapsed"/>
+                                    </Grid>
+                                </Border>
+
+                                <Grid Grid.Row="2" Margin="2,12,2,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="БУФЕР ОБМЕНА" Style="{StaticResource SectionHead}" Margin="2,0,0,0" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Style="{StaticResource Seg}" Content="✕" Height="16" Padding="6,0"
+                                            VerticalAlignment="Center"
+                                            Click="ClearClipboard_Click" ToolTip="Очистить историю"/>
+                                </Grid>
+
+                                <ScrollViewer Grid.Row="3" MaxHeight="146" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                                    <StackPanel x:Name="ClipboardList"/>
+                                </ScrollViewer>
+                            </Grid>
+
+                            <!-- ═════ ПОИСК ═════ -->
+                            <Grid x:Name="SearchTab" Height="238" ClipToBounds="True" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="40"/>
+                                    <RowDefinition Height="160"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Padding="10,0" Height="40">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="&#xE721;" Style="{StaticResource Glyph}" FontSize="13"
+                                                   Foreground="{DynamicResource SubBrush}" VerticalAlignment="Center"/>
+                                        <TextBox x:Name="SearchBox" Grid.Column="1" Margin="8,0,0,0"
+                                                 Background="Transparent" BorderThickness="0" FontSize="13"
+                                                 VerticalContentAlignment="Center"
+                                                 TextChanged="SearchBox_TextChanged" PreviewKeyDown="SearchBox_KeyDown"/>
+                                    </Grid>
+                                </Border>
+
+                                <ScrollViewer Grid.Row="1" Margin="0,8,0,0"
+                                              VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                                    <StackPanel x:Name="SearchList"/>
+                                </ScrollViewer>
+
+                                <TextBlock x:Name="SearchHint" Grid.Row="2"
+                                           Text="Enter — запустить · ↑↓ — выбрать · Esc — очистить"
+                                           FontSize="9.5" Foreground="{DynamicResource SubBrush}" Margin="2,8,0,0"
+                                           VerticalAlignment="Top"/>
+                            </Grid>
+
+                            <!-- ═════ ТАЙМЕР ═════ -->
+                            <Grid x:Name="TimerTab" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <UniformGrid Columns="3" Margin="-2,0,-2,0">
+                                    <Button x:Name="TmStopwatch" Style="{StaticResource Seg}" Content="Секундомер"
+                                            Tag="stopwatch" Click="TimerMode_Click"/>
+                                    <Button x:Name="TmCountdown" Style="{StaticResource Seg}" Content="Таймер"
+                                            Tag="countdown" Click="TimerMode_Click"/>
+                                    <Button x:Name="TmPomodoro" Style="{StaticResource Seg}" Content="Помодоро"
+                                            Tag="pomodoro" Click="TimerMode_Click"/>
+                                </UniformGrid>
+
+                                <Grid Grid.Row="1" Height="132" Margin="0,10,0,0" VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid Width="122" Height="122" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Ellipse Width="122" Height="122" Stroke="{DynamicResource TrackBrush}" StrokeThickness="6"/>
+                                        <Path x:Name="TimerRing" Stroke="{DynamicResource AccentBrush}" StrokeThickness="6"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <TextBlock x:Name="TimerTime" Text="25:00" FontSize="26" FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"/>
+                                            <TextBlock x:Name="TimerPhase" Text="" FontSize="10"
+                                                       Foreground="{DynamicResource SubBrush}"
+                                                       HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0" Width="112">
+                                        <Button x:Name="TimerStartBtn" Content="Старт" Style="{StaticResource Primary}"
+                                                Click="TimerStart_Click"/>
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Style="{StaticResource Seg}" Content="Сброс" Height="26"
+                                                    Click="TimerReset_Click"/>
+                                            <Button Grid.Column="1" Style="{StaticResource Seg}" Content="+1 мин" Height="26"
+                                                    Margin="6,0,0,0" Click="TimerPlus_Click"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel x:Name="TimerPresets" Grid.Row="2" Orientation="Horizontal"
+                                            HorizontalAlignment="Center" Margin="0,10,0,0">
+                                    <Button Style="{StaticResource Seg}" Content="5 мин"  Tag="5"  Click="TimerPreset_Click"/>
+                                    <Button Style="{StaticResource Seg}" Content="10 мин" Tag="10" Click="TimerPreset_Click"/>
+                                    <Button Style="{StaticResource Seg}" Content="15 мин" Tag="15" Click="TimerPreset_Click"/>
+                                    <Button Style="{StaticResource Seg}" Content="25 мин" Tag="25" Click="TimerPreset_Click"/>
+                                    <Button Style="{StaticResource Seg}" Content="45 мин" Tag="45" Click="TimerPreset_Click"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- ═════ НАСТРОЙКИ ═════ -->
+                            <Grid x:Name="SettingsTab" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Margin="2,0,2,6">
+                                    <TextBlock Text="ТЕМА И РАЗМЕР" Style="{StaticResource SectionHead}"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button x:Name="DarkBtn" Style="{StaticResource Seg}" Content="Тёмная" Tag="dark" Click="Theme_Click"/>
+                                        <Button x:Name="LightBtn" Style="{StaticResource Seg}" Content="Светлая" Tag="light" Click="Theme_Click"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel Grid.Row="1">
+                                    <Grid Margin="2,0,2,8">
+                                        <TextBlock Text="Размер островка" FontSize="11" VerticalAlignment="Center"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button x:Name="SizeCompact" Style="{StaticResource Seg}" Content="Мини" Tag="compact" Click="Size_Click"/>
+                                            <Button x:Name="SizeNormal"  Style="{StaticResource Seg}" Content="Обычный" Tag="normal" Click="Size_Click"/>
+                                            <Button x:Name="SizeLarge"   Style="{StaticResource Seg}" Content="Крупный" Tag="large" Click="Size_Click"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="2,0,2,8">
+                                        <TextBlock Text="Палитра" FontSize="11" VerticalAlignment="Center"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button x:Name="PalGraphite" Style="{StaticResource Dot}" Tag="graphite"
+                                                    Background="#4A4A52" Click="Palette_Click" ToolTip="Graphite"/>
+                                            <Button x:Name="PalMidnight" Style="{StaticResource Dot}" Tag="midnight"
+                                                    Background="#3E6DB5" Click="Palette_Click" ToolTip="Midnight"/>
+                                            <Button x:Name="PalNord" Style="{StaticResource Dot}" Tag="nord"
+                                                    Background="#5E81AC" Click="Palette_Click" ToolTip="Nord"/>
+                                            <Button x:Name="PalMono" Style="{StaticResource Dot}" Tag="mono"
+                                                    Background="#9A9AA0" Click="Palette_Click" ToolTip="Mono"/>
+                                            <Button x:Name="PalSand" Style="{StaticResource Dot}" Tag="sand"
+                                                    Background="#B08968" Click="Palette_Click" ToolTip="Sand"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="2,0,2,8">
+                                        <TextBlock Text="Язык" FontSize="11" VerticalAlignment="Center"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button x:Name="LangRu" Style="{StaticResource Seg}" Content="RU" Tag="ru" Click="Lang_Click"/>
+                                            <Button x:Name="LangEn" Style="{StaticResource Seg}" Content="EN" Tag="en" Click="Lang_Click"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border Background="{DynamicResource CardBrush}" CornerRadius="12" Padding="10,4" Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <Grid Height="30">
+                                                <TextBlock Text="Раскрывать при наведении" FontSize="11" VerticalAlignment="Center"/>
+                                                <ToggleButton x:Name="HoverSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                                              VerticalAlignment="Center" Checked="Hover_Changed" Unchecked="Hover_Changed"/>
+                                            </Grid>
+                                            <Border Height="1" Background="{DynamicResource DividerBrush}"/>
+                                            <Grid Height="30">
+                                                <TextBlock Text="Тоньше при простое" FontSize="11" VerticalAlignment="Center"/>
+                                                <ToggleButton x:Name="IdleSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                                              VerticalAlignment="Center" Checked="Idle_Changed" Unchecked="Idle_Changed"/>
+                                            </Grid>
+                                            <Border Height="1" Background="{DynamicResource DividerBrush}"/>
+                                            <Grid Height="30">
+                                                <TextBlock Text="Громкость колесом" FontSize="11" VerticalAlignment="Center"/>
+                                                <ToggleButton x:Name="WheelSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                                              VerticalAlignment="Center" Checked="Wheel_Changed" Unchecked="Wheel_Changed"/>
+                                            </Grid>
+                                            <Border Height="1" Background="{DynamicResource DividerBrush}"/>
+                                            <Grid Height="30">
+                                                <TextBlock Text="Эквалайзер" FontSize="11" VerticalAlignment="Center"/>
+                                                <ToggleButton x:Name="EqSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                                              VerticalAlignment="Center" Checked="Eq_Changed" Unchecked="Eq_Changed"/>
+                                            </Grid>
+                                            <Border Height="1" Background="{DynamicResource DividerBrush}"/>
+                                            <Grid Height="30">
+                                                <TextBlock Text="Режим стримера" FontSize="11" VerticalAlignment="Center"/>
+                                                <ToggleButton x:Name="StreamSwitch" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                                              VerticalAlignment="Center" Checked="Stream_Changed" Unchecked="Stream_Changed"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Button Style="{StaticResource Seg}" Content="Все настройки…" Height="30" Margin="0,0,0,0"
+                                            Click="Settings_Click"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="2" Text="Salli · Dynamic Island" FontSize="9"
+                                           Foreground="{DynamicResource SubBrush}" HorizontalAlignment="Center"
+                                           Margin="0,6,0,0"/>
+                            </Grid>
+
+                        </Grid>
+                    </Grid>
+                </Border>
+
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
+
+
+
