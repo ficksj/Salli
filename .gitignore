@@ -7,7 +7,7 @@ obj/
 .idea/
 
 # Published builds
-publish/
+publish*/
 *.pdb
 
 # Local artefacts

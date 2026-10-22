@@ -5,6 +5,9 @@
 ![WPF](https://img.shields.io/badge/WPF-desktop-68217A)
 ![Лицензия MIT](https://img.shields.io/badge/license-MIT-22c55e)
 
+[![Скачать Salli.exe](https://img.shields.io/badge/%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C-Salli.exe-0A84FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/ficksj/Salli/releases/latest)
+[![Сайт](https://img.shields.io/badge/Salli-%D1%81%D0%B0%D0%B9%D1%82-1c1c22?style=for-the-badge)](https://ficksj.github.io/Salli/)
+
 Аккуратный «динамический остров» в центре верхней кромки экрана. Музыка, система,
 сеть, буфер обмена, поиск и таймер живут в одной плашке, которая раскрывается
 за 0.4 секунды и плавно перетекает между состояниями — без дёрганья, мигания и
@@ -113,7 +116,11 @@
 
 ## Запуск
 
-Нужен Windows 10 (19041+) или Windows 11 и [.NET 8 SDK](https://dotnet.microsoft.com/download).
+**Готовый билд:** скачать [`Salli.exe`](https://github.com/ficksj/Salli/releases/latest) (~75 МБ,
+самодостаточная сборка — .NET ставить не нужно) и запустить. SmartScreen может спросить:
+«Подробнее» → «Выполнить в любом случае».
+
+**Из исходников.** Нужен Windows 10 (19041+) или Windows 11 и [.NET 8 SDK](https://dotnet.microsoft.com/download).
 
 ```powershell
 git clone https://github.com/ficksj/Salli.git
@@ -126,7 +133,8 @@ dotnet build -c Release
 
 ```powershell
 dotnet publish -c Release -r win-x64 --self-contained true `
-  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+  -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true `
+  -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 Настройки, заметка и картинки из буфера лежат в `%APPDATA%\Salli`.

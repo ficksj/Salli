@@ -794,6 +794,33 @@
   }
 
   /* install */
+  .dl {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 34px;
+    padding: 22px 26px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.09);
+    background:
+      radial-gradient(120% 160% at 0% 0%, rgba(10,132,255,.12), transparent 60%),
+      var(--card);
+  }
+
+  .dl b {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 17px;
+    letter-spacing: -.01em;
+  }
+
+  .dl span { font-size: 13.5px; color: var(--sub); }
+
+  @media (max-width: 640px) {
+    .dl { flex-direction: column; align-items: flex-start; gap: 16px; }
+  }
+
   .install {
     margin-top: 34px;
     border-radius: 18px;
@@ -917,7 +944,7 @@
       перетекает между состояниями.
     </p>
     <div class="hero-actions">
-      <a class="btn btn-primary" href="#install">Скачать и собрать</a>
+      <a class="btn btn-primary" href="https://github.com/ficksj/Salli/releases/latest" target="_blank" rel="noreferrer">Скачать .exe</a>
       <a class="btn btn-ghost" href="#features">Посмотреть возможности</a>
     </div>
     <div class="hint">Без установки · один .exe · открытый исходный код</div>
@@ -1277,16 +1304,24 @@
   <div class="wrap">
     <div class="reveal">
       <div class="eyebrow">Установка</div>
-      <h2>Собрать за минуту</h2>
+      <h2>Скачать или собрать</h2>
       <p class="section-lead">
-        Нужен Windows 10 (19041+) или Windows 11 и .NET 8 SDK.
-        Настройки и буфер обмена хранятся в <code style="font-family:Consolas,monospace">%APPDATA%\Salli</code>.
+        Готовый <code style="font-family:Consolas,monospace">Salli.exe</code> не требует установки —
+        .NET уже внутри. Для сборки из исходников нужен Windows 10 (19041+) или 11 и .NET 8 SDK.
       </p>
+    </div>
+
+    <div class="dl reveal">
+      <div>
+        <b>Salli.exe</b>
+        <span>~75 МБ · Windows 10 (19041+) / 11 · x64 · самодостаточный</span>
+      </div>
+      <a class="btn btn-primary" href="https://github.com/ficksj/Salli/releases/latest" target="_blank" rel="noreferrer">Скачать с GitHub</a>
     </div>
 
     <div class="install reveal">
       <div class="install-head">
-        <span>PowerShell</span>
+        <span>PowerShell · сборка из исходников</span>
         <button class="btn btn-ghost btn-sm" id="copy">Скопировать</button>
       </div>
       <pre id="code"><span class="c"># клонируйте репозиторий</span>
@@ -1297,9 +1332,10 @@
 <span class="k">dotnet</span> build -c Release
 .\bin\Release\net8.0-windows10.0.19041.0\Salli.exe
 
-<span class="c"># или один самодостаточный .exe</span>
+<span class="c"># или один самодостаточный .exe (~75 МБ)</span>
 <span class="k">dotnet</span> publish -c Release -r win-x64 --self-contained <span class="s">true</span> `
-  -p:PublishSingleFile=<span class="s">true</span> -p:IncludeNativeLibrariesForSelfExtract=<span class="s">true</span></pre>
+  -p:PublishSingleFile=<span class="s">true</span> -p:EnableCompressionInSingleFile=<span class="s">true</span> `
+  -p:IncludeNativeLibrariesForSelfExtract=<span class="s">true</span></pre>
     </div>
 
     <div class="reveal">
