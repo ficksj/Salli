@@ -525,6 +525,9 @@
                                             <Ellipse x:Name="ProgressThumb" Width="10" Height="10" Fill="White"
                                                      HorizontalAlignment="Left" VerticalAlignment="Center"
                                                      Margin="-5,0,0,0" Visibility="Collapsed">
+                                                <Ellipse.RenderTransform>
+                                                    <TranslateTransform x:Name="ProgressThumbShift" X="0"/>
+                                                </Ellipse.RenderTransform>
                                                 <Ellipse.Effect>
                                                     <DropShadowEffect ShadowDepth="1" BlurRadius="4" Opacity="0.5" Color="Black"/>
                                                 </Ellipse.Effect>
@@ -574,11 +577,11 @@
 
                                     <StackPanel x:Name="EqualizerBox" Orientation="Horizontal" HorizontalAlignment="Right"
                                                 VerticalAlignment="Center" Height="26">
-                                        <Border x:Name="Eq1" Width="3" Height="6" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
-                                        <Border x:Name="Eq2" Width="3" Height="10" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
-                                        <Border x:Name="Eq3" Width="3" Height="14" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
-                                        <Border x:Name="Eq4" Width="3" Height="16" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
-                                        <Border x:Name="Eq5" Width="3" Height="8" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom"/>
+                                        <Border x:Name="Eq1" Width="3" Height="26" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom" RenderTransformOrigin="0.5,1"><Border.RenderTransform><ScaleTransform ScaleY="0.23"/></Border.RenderTransform></Border>
+                                        <Border x:Name="Eq2" Width="3" Height="26" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom" RenderTransformOrigin="0.5,1"><Border.RenderTransform><ScaleTransform ScaleY="0.38"/></Border.RenderTransform></Border>
+                                        <Border x:Name="Eq3" Width="3" Height="26" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom" RenderTransformOrigin="0.5,1"><Border.RenderTransform><ScaleTransform ScaleY="0.54"/></Border.RenderTransform></Border>
+                                        <Border x:Name="Eq4" Width="3" Height="26" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom" RenderTransformOrigin="0.5,1"><Border.RenderTransform><ScaleTransform ScaleY="0.62"/></Border.RenderTransform></Border>
+                                        <Border x:Name="Eq5" Width="3" Height="26" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="1.5,0" VerticalAlignment="Bottom" RenderTransformOrigin="0.5,1"><Border.RenderTransform><ScaleTransform ScaleY="0.31"/></Border.RenderTransform></Border>
                                     </StackPanel>
                                 </Grid>
 

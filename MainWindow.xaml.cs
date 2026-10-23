@@ -35,7 +35,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _weatherTimer = new() { Interval = TimeSpan.FromMinutes(10) };
     private readonly DispatcherTimer _eqTimer      = new() { Interval = TimeSpan.FromMilliseconds(90) };
     private readonly DispatcherTimer _idleTimer    = new() { Interval = TimeSpan.FromSeconds(5) };
-    private readonly DispatcherTimer _hoverTimer   = new() { Interval = TimeSpan.FromMilliseconds(420) };
+    private readonly DispatcherTimer _hoverTimer   = new() { Interval = TimeSpan.FromMilliseconds(260) };
     private readonly DispatcherTimer _noteTimer    = new() { Interval = TimeSpan.FromMilliseconds(700) };
     private readonly DispatcherTimer _layoutTimer  = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private readonly DispatcherTimer _shadowTimer  = new() { Interval = TimeSpan.FromMilliseconds(500) };
@@ -46,6 +46,7 @@ public partial class MainWindow : Window
     private Size _expandedSize  = new(520, 410);
     private Size _notifySize    = new(420, 48);
     private DateTime _morphUntil = DateTime.MinValue;
+    private int _morphGeneration;
     private bool _ready;
     private bool _brightnessAvailable = true;
     private bool _brightnessDdc;
@@ -98,6 +99,8 @@ public partial class MainWindow : Window
     private double _down, _up;
     private double _level;
     private int  _eqTick;
+    private static readonly double[] EqJitter = [0.55, 0.85, 1.0, 0.75, 0.45];
+    private Border[] _eqBars = Array.Empty<Border>();
     private IntPtr _hwnd;
 
     private string _lastClipboard = "";
@@ -110,6 +113,8 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _tickTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
     private readonly DispatcherTimer _fsTimer   = new() { Interval = TimeSpan.FromMilliseconds(1400) };
     private string _timerText = "";
+    private double _ringFraction = -1;
+    private double _barRingFraction = -1;
     private bool _hiddenFs;
 
     // search
@@ -139,6 +144,7 @@ public partial class MainWindow : Window
         Theme.Apply(_settings);
 
         InitializeComponent();
+        _eqBars = [Eq1, Eq2, Eq3, Eq4, Eq5];
 
         ApplyTimerSettings();
 
@@ -249,11 +255,9 @@ public partial class MainWindow : Window
         _shadowTimer.Tick += (_, _) =>
         {
             _shadowTimer.Stop();
-
+            IslandShadow.BeginAnimation(DropShadowEffect.OpacityProperty, null);
+            IslandShadow.Opacity = 0.42;
             Island.Effect = IslandShadow;
-            IslandShadow.BeginAnimation(DropShadowEffect.OpacityProperty,
-                new DoubleAnimation(0, 0.42, TimeSpan.FromMilliseconds(240))
-                { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
         };
 
         _tickTimer.Tick += (_, _) => TickTimer();
@@ -320,8 +324,15 @@ public partial class MainWindow : Window
 
     private Rect IslandRect()
     {
-        var origin = Island.TranslatePoint(new Point(0, 0), this);
-        return new Rect(origin.X, origin.Y, Island.ActualWidth, Island.ActualHeight);
+        try
+        {
+            var local = Island.Clip?.Bounds ?? new Rect(0, 0, Island.ActualWidth, Island.ActualHeight);
+            return Island.TransformToAncestor(this).TransformBounds(local);
+        }
+        catch
+        {
+            return Rect.Empty;
+        }
     }
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -483,20 +494,28 @@ public partial class MainWindow : Window
         var width = ProgressHost.ActualWidth;
         var fraction = Math.Clamp(_progress, 0, 1);
 
+        var target = Math.Max(0, width * fraction);
+
         if (_seeking)
         {
             ProgressScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
             ProgressScale.ScaleX = fraction;
+            ProgressThumbShift.BeginAnimation(TranslateTransform.XProperty, null);
+            ProgressThumbShift.X = target;
         }
         else
         {
-            var from = ProgressScale.ScaleX;
-            ProgressScale.BeginAnimation(ScaleTransform.ScaleXProperty,
-                new DoubleAnimation(from, fraction, TimeSpan.FromMilliseconds(380))
-                { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
-        }
+            // The clock ticks once a second: easing into every step shows up
+            // as a stutter, a linear run that spans the tick reads as a glide.
+            var span = TimeSpan.FromMilliseconds(_now.IsPlaying ? 1000 : 220);
 
-        ProgressThumb.Margin = new Thickness(Math.Max(0, width * fraction) - 5, 0, 0, 0);
+            ProgressScale.BeginAnimation(ScaleTransform.ScaleXProperty,
+                new DoubleAnimation(ProgressScale.ScaleX, fraction, span));
+
+            // The thumb rides on a render transform, so it never re-runs layout.
+            ProgressThumbShift.BeginAnimation(TranslateTransform.XProperty,
+                new DoubleAnimation(ProgressThumbShift.X, target, span));
+        }
         PosText.Text = FormatTime(_position);
         DurText.Text = FormatTime(_duration);
     }
@@ -565,6 +584,15 @@ public partial class MainWindow : Window
         try
         {
             var snap = await Task.Run(GatherAsync);
+
+            // Never repaint the whole panel in the middle of a morph: the
+            // snapshot is a burst of ~40 property writes and would drop a frame.
+            for (var guard = 0; guard < 6; guard++)
+            {
+                var wait = (_morphUntil - DateTime.Now).TotalMilliseconds;
+                if (wait <= 0) break;
+                await Task.Delay((int)wait + 40);
+            }
 
             await Dispatcher.InvokeAsync(() =>
             {
@@ -994,7 +1022,7 @@ public partial class MainWindow : Window
         switch (mode)
         {
             case Mode.Expanded:
-                _expandedSize = MeasurePanel(ExpandedPanel);
+                _expandedSize = MeasurePanel(ExpandedPanel, autoWidth: false);
                 ExpandedPanel.Height = _expandedSize.Height;  // freeze layout while the island morphs
                 target = _expandedSize;
                 break;
@@ -1064,9 +1092,9 @@ public partial class MainWindow : Window
         el.BeginAnimation(OpacityProperty, null);
         el.Opacity = 0;
         el.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300))
+            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320))
             {
-                BeginTime      = TimeSpan.FromMilliseconds(70),
+                BeginTime      = TimeSpan.FromMilliseconds(40),
                 EasingFunction = ease
             });
 
@@ -1115,45 +1143,82 @@ public partial class MainWindow : Window
 
     private void Morph(Size target, Mode mode, int? msOverride = null)
     {
-        var fromW = Island.ActualWidth;
-        var fromH = Island.ActualHeight;
-        if (double.IsNaN(fromW) || fromW <= 0) fromW = target.Width;
-        if (double.IsNaN(fromH) || fromH <= 0) fromH = target.Height;
+        var current = CurrentIslandClipBounds();
+        var fromW = current.Width;
+        var fromH = current.Height;
+        if (fromW <= 0 || double.IsNaN(fromW)) fromW = target.Width;
+        if (fromH <= 0 || double.IsNaN(fromH)) fromH = target.Height;
 
-        Island.BeginAnimation(WidthProperty, null);
-        Island.BeginAnimation(HeightProperty, null);
-        Island.Width  = target.Width;
-        Island.Height = target.Height;
-
-        if (Math.Abs(fromW - target.Width) < 0.5 && Math.Abs(fromH - target.Height) < 0.5) return;
-
-        // Growing gets a slightly longer, softer curve than shrinking.
-        var expanding = target.Height > fromH + 2;
-        var ms   = msOverride ?? (expanding ? 440 : 300);
-        if (ms <= 0)
+        var expanding = target.Height > fromH + 2 || target.Width > fromW + 2;
+        var ms = msOverride ?? (expanding ? 440 : 300);
+        if (ms <= 0 || (Math.Abs(fromW - target.Width) < 0.5 && Math.Abs(fromH - target.Height) < 0.5))
         {
+            ++_morphGeneration;
+            Island.Width = target.Width;
+            Island.Height = target.Height;
+            Island.Clip = null;
             _morphUntil = DateTime.MinValue;
             return;
         }
 
-        var ease = new QuinticEase { EasingMode = EasingMode.EaseOut };
-        var dur  = new Duration(TimeSpan.FromMilliseconds(ms));
+        // Keep the full layout stable and animate only its clip. Width/Height
+        // animations force WPF to re-layout this transparent window every frame.
+        var hostW = Math.Max(target.Width, fromW);
+        var hostH = Math.Max(target.Height, fromH);
+        Island.Width = hostW;
+        Island.Height = hostH;
 
-        // A blur effect is rasterised afresh on every frame while the island
-        // resizes, which costs ~40 ms per morph on layered windows. Drop it
-        // for the duration of the animation and ease it back in.
+        var start = new Rect((hostW - fromW) / 2, 0, fromW, fromH);
+        var end = new Rect((hostW - target.Width) / 2, 0, target.Width, target.Height);
+        var rounded = new RectangleGeometry(start, 22, 22);
+        var top = new RectangleGeometry(new Rect(start.X, 0, start.Width, 22));
+        var clip = new GeometryGroup { FillRule = FillRule.Nonzero };
+        clip.Children.Add(rounded);
+        clip.Children.Add(top);
+        Island.Clip = clip;
+
+        var generation = ++_morphGeneration;
+        IslandShadow.BeginAnimation(DropShadowEffect.OpacityProperty, null);
         Island.Effect = null;
         _shadowTimer.Stop();
 
-        Island.BeginAnimation(WidthProperty,
-            new DoubleAnimation(fromW, target.Width, dur) { EasingFunction = ease });
-        Island.BeginAnimation(HeightProperty,
-            new DoubleAnimation(fromH, target.Height, dur) { EasingFunction = ease });
+        var duration = TimeSpan.FromMilliseconds(ms);
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var finish = new EventHandler((_, _) =>
+        {
+            if (generation != _morphGeneration) return;
 
-        _shadowTimer.Interval = TimeSpan.FromMilliseconds(ms + 20);
+            Island.Width = target.Width;
+            Island.Height = target.Height;
+            Island.Clip = null;
+            _morphUntil = DateTime.MinValue;
+        });
+
+        var shapeAnimation = new RectAnimation(start, end, duration)
+        {
+            EasingFunction = easing
+        };
+        shapeAnimation.Completed += finish;
+        rounded.BeginAnimation(RectangleGeometry.RectProperty, shapeAnimation);
+        top.BeginAnimation(RectangleGeometry.RectProperty,
+            new RectAnimation(new Rect(start.X, 0, start.Width, 22),
+                              new Rect(end.X, 0, end.Width, 22), duration)
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
+
+        _shadowTimer.Interval = TimeSpan.FromMilliseconds(ms + 80);
         _shadowTimer.Start();
+        _morphUntil = DateTime.Now.AddMilliseconds(ms + 100);
+    }
 
-        _morphUntil = DateTime.Now.AddMilliseconds(ms + 40);
+    private Rect CurrentIslandClipBounds()
+    {
+        if (Island.Clip is GeometryGroup group && group.Children.Count > 0 &&
+            group.Children[0] is RectangleGeometry rounded)
+            return rounded.Rect;
+
+        return new Rect(0, 0, Island.ActualWidth, Island.ActualHeight);
     }
 
     /// <summary>
@@ -1161,13 +1226,14 @@ public partial class MainWindow : Window
     /// important: while the island animates, panels keep a frozen height so
     /// their whole subtree is not re-measured on every frame.
     /// </summary>
-    private Size MeasurePanel(FrameworkElement panel)
+    private Size MeasurePanel(FrameworkElement panel, bool autoWidth = true)
     {
         var vis = panel.Visibility;
         var h   = panel.Height;
 
         panel.Visibility = Visibility.Visible;
         panel.Height     = double.NaN;
+        if (autoWidth) panel.Width = double.NaN;
 
         var available = Math.Max(240, Width - 40);
         panel.Measure(new Size(available, double.PositiveInfinity));
@@ -1176,6 +1242,9 @@ public partial class MainWindow : Window
         panel.Measure(new Size(width, double.PositiveInfinity));
         var size = new Size(width, Math.Ceiling(panel.DesiredSize.Height));
 
+        // Pin the width: the island itself changes size during a morph, and a
+        // stretching panel would re-flow its content on the very first frame.
+        if (autoWidth) panel.Width = width;
         panel.Height     = h;
         panel.Visibility = vis;
         panel.InvalidateMeasure();
@@ -1201,7 +1270,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var size = MeasurePanel(ExpandedPanel);
+        var size = MeasurePanel(ExpandedPanel, autoWidth: false);
         if (Math.Abs(size.Height - _expandedSize.Height) > 1 || Math.Abs(size.Width - _expandedSize.Width) > 1)
         {
             _expandedSize = size;
@@ -1372,8 +1441,7 @@ public partial class MainWindow : Window
         NoteScale.ScaleX  = NoteScale.ScaleY  = scale;
 
         _collapsedSize = MeasurePanel(CollapsedPanel);
-        _expandedSize  = MeasurePanel(ExpandedPanel);
-
+        _expandedSize  = MeasurePanel(ExpandedPanel, autoWidth: false);
         BarScale.ScaleX   = BarScale.ScaleY   = oldBar;
         PanelScale.ScaleX = PanelScale.ScaleY = oldPanel;
         NoteScale.ScaleX  = NoteScale.ScaleY  = oldPanel;
@@ -2324,13 +2392,21 @@ public partial class MainWindow : Window
         }
 
         var height = 4 + _level * 22;
-        var jitter = new[] { 0.55, 0.85, 1.0, 0.75, 0.45 };
-        var bars   = new[] { Eq1, Eq2, Eq3, Eq4, Eq5 };
-
-        for (var i = 0; i < bars.Length; i++)
+        for (var i = 0; i < _eqBars.Length; i++)
         {
-            var value = 4 + height * jitter[i] * (0.85 + Random.Shared.NextDouble() * 0.3);
-            bars[i].Height = Math.Clamp(value, 3, 26);
+            var value = 4 + height * EqJitter[i] * (0.85 + Random.Shared.NextDouble() * 0.3);
+            if (_eqBars[i].RenderTransform is not ScaleTransform scale) continue;
+
+            var from = scale.ScaleY;
+            var target = Math.Clamp(value / 26, 0.12, 1);
+
+            // Match the tick interval: the step finishes exactly as the next
+            // one arrives, so the bars flow instead of chasing a moving target.
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty,
+                new DoubleAnimation(from, target, TimeSpan.FromMilliseconds(90))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                });
         }
     }
 
@@ -2561,8 +2637,19 @@ public partial class MainWindow : Window
         BarTimer.Visibility  = visible ? Visibility.Visible : Visibility.Collapsed;
         BarTimerText.Text    = text;
 
-        if (visible) BarRing.Data = ArcGeometry(22, fraction);
-        TimerRing.Data = ArcGeometry(122, fraction);
+        // Rebuilding the arc geometry ten times a second is a lot of garbage
+        // for a sub-pixel change: only redraw once the arc actually moved.
+        if (visible && Math.Abs(fraction - _barRingFraction) > 0.004)
+        {
+            _barRingFraction = fraction;
+            BarRing.Data = ArcGeometry(22, fraction);
+        }
+
+        if (Math.Abs(fraction - _ringFraction) > 0.0025)
+        {
+            _ringFraction = fraction;
+            TimerRing.Data = ArcGeometry(122, fraction);
+        }
 
         TimerTime.Text = text;
         TimerPhase.Text = _timer.IsPomodoro
